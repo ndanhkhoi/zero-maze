@@ -2,160 +2,187 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maze Game - SVG Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pac-Maze Game</title>
     <style>
         :root {
-            --cell-size: min(6vw, 40px);
-            --wall-color: #6d4c41;
-            --path-color: #fff3e0;
+            --cell-size: 28px;
+            --wall-color: #0000AA;
+            --path-color: #000000;
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: #efebe9;
+            background: #000;
+            color: #FFF;
             touch-action: none;
         }
 
-        .controls {
-            margin: 20px 0;
+        .game-container {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
         }
 
         .maze-container {
-            width: 90vw;
-            max-width: 600px;
-            overflow: auto;
-            padding: 10px;
-            background: #d7ccc8;
+            width: 100vmin;
+            height: 100vmin;
+            max-width: 512px;
+            max-height: 512px;
+            position: relative;
+            border: 4px solid #FFD700;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            background: #000;
         }
 
         .maze {
             display: grid;
-            gap: 2px;
-            margin: auto;
+            gap: 1px;
+            width: 100%;
+            height: 100%;
         }
 
         .cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
             position: relative;
-            background-size: cover;
+            background: var(--path-color);
         }
 
         .wall {
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 2h28v28H2z' fill='%236d4c41'/%3E%3Cpath d='M4 4h4v4H4zM12 4h4v4h-4zM20 4h4v4h-4zM28 4h4v4h-4zM4 12h4v4H4zM12 12h4v4h-4zM20 12h4v4h-4zM28 12h4v4h-4z' fill='%235d4037'/%3E%3C/svg%3E");
+            background: var(--wall-color);
+            box-shadow: 0 0 8px #0000FF;
         }
 
         .player {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2342a5f5'/%3E%3Ccircle cx='16' cy='12' r='4' fill='%23fff'/%3E%3Cpath d='M16 20a8 8 0 0 1 8 8H8a8 8 0 0 1 8-8z' fill='%23fff'/%3E%3C/svg%3E");
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23FFD700'/%3E%3Cpath d='M16 4a12 12 0 0 1 0 24 12 12 0 0 1 0-24z' fill='%23FFF'/%3E%3C/svg%3E") center/cover;
+            transition: transform 0.15s ease-in-out;
         }
 
-        .start { background-color: #a5d6a7; }
-        .end { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ef5350'/%3E%3Cpath d='M14 8l12 16-12-4 12-4z' fill='%23fff'/%3E%3C/svg%3E"); }
+        .end {
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%2300FF00'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23FFFFFF'/%3E%3C/svg%3E") center/cover;
+        }
 
-        .arrow-keys {
+        .controls {
             display: grid;
             grid-template-areas: 
                 ". up ."
                 "left . right"
                 ". down .";
-            gap: 8px;
+            gap: 10px;
             margin: 20px 0;
         }
 
         .arrow-btn {
-            width: calc(var(--cell-size) * 2);
-            height: calc(var(--cell-size) * 2);
-            background: #fff;
-            border: none;
+            width: 60px;
+            height: 60px;
+            background: #333;
+            border: 2px solid #FFD700;
             border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            color: #FFD700;
+            font-size: 24px;
             touch-action: manipulation;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            color: #757575;
+            transition: all 0.1s;
         }
 
         .arrow-btn:active {
-            transform: scale(0.95);
-            background: #eee;
+            background: #555;
+            transform: scale(0.9);
         }
 
-        @media (max-width: 600px) {
-            :root {
-                --cell-size: 8vw;
-            }
+        #up { grid-area: up; }
+        #left { grid-area: left; }
+        #right { grid-area: right; }
+        #down { grid-area: down; }
+
+        .score-board {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            padding: 20px;
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 100;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <label for="size">Kích thước:</label>
-        <input type="number" id="size" min="5" max="30" value="10">
-        <button onclick="generateMaze()">Tạo mới</button>
-    </div>
-    
-    <div class="maze-container">
-        <div class="maze" id="maze"></div>
+    <div class="game-container">
+        <div class="score-board">
+            <div>Điểm: <span id="score">0</span></div>
+            <div>Bước còn lại: <span id="steps">100</span></div>
+        </div>
+        
+        <div class="maze-container">
+            <div class="maze" id="maze"></div>
+        </div>
+
+        <div class="controls">
+            <button class="arrow-btn" id="up">↑</button>
+            <button class="arrow-btn" id="left">←</button>
+            <button class="arrow-btn" id="right">→</button>
+            <button class="arrow-btn" id="down">↓</button>
+        </div>
     </div>
 
-    <div class="arrow-keys">
-        <button class="arrow-btn" id="up">↑</button>
-        <button class="arrow-btn" id="left">←</button>
-        <button class="arrow-btn" id="right">→</button>
-        <button class="arrow-btn" id="down">↓</button>
+    <div class="modal" id="resultModal">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+        <button onclick="generateMaze()">Chơi lại</button>
     </div>
 
     <script>
-        let mazeSize = 10;
+        let mazeSize = 15;
         let mazeLayout = [];
         let playerPosition = { x: 1, y: 1 };
+        let score = 0;
+        let maxSteps = 100;
         let isMoving = false;
 
         function generateMaze() {
-            mazeSize = parseInt(document.getElementById('size').value);
-            if (mazeSize < 5 || mazeSize > 30) {
-                alert("Kích thước từ 5 đến 30!");
-                return;
-            }
-            
+            document.getElementById('resultModal').style.display = 'none';
+            mazeSize = Math.min(Math.max(parseInt(document.getElementById('size')?.value || 15), 5), 25);
             mazeLayout = createRandomMaze(mazeSize);
             renderMaze(mazeLayout);
-            placePlayer();
+            resetGame();
         }
 
         function createRandomMaze(size) {
+            size = size % 2 === 0 ? size + 1 : size;
             const maze = Array.from({ length: size }, () => Array(size).fill(1));
             
-            function dfs(x, y) {
+            function carve(x, y) {
                 const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(() => Math.random()-0.5);
                 maze[y][x] = 0;
                 
                 for(const [dx, dy] of dirs) {
                     const nx = x + dx*2;
                     const ny = y + dy*2;
-                    if(nx >= 0 && nx < size && ny >= 0 && ny < size && maze[ny][nx]) {
+                    if(nx > 0 && nx < size-1 && ny > 0 && ny < size-1 && maze[ny][nx]) {
                         maze[y+dy][x+dx] = 0;
-                        dfs(nx, ny);
+                        carve(nx, ny);
                     }
                 }
             }
             
-            dfs(1, 1);
-            maze[1][1] = 0;
+            carve(1, 1);
             maze[size-2][size-2] = 0;
             return maze;
         }
@@ -163,83 +190,86 @@
         function renderMaze(maze) {
             const mazeElement = document.getElementById('maze');
             mazeElement.innerHTML = '';
-            mazeElement.style.gridTemplateColumns = `repeat(${mazeSize}, var(--cell-size))`;
+            mazeElement.style.gridTemplateColumns = `repeat(${maze.length}, 1fr)`;
             
-            for(let y = 0; y < mazeSize; y++) {
-                for(let x = 0; x < mazeSize; x++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    
-                    if(maze[y][x] === 1) cell.classList.add('wall');
-                    if(x === 1 && y === 1) cell.classList.add('start');
-                    if(x === mazeSize-2 && y === mazeSize-2) cell.classList.add('end');
-                    
-                    mazeElement.appendChild(cell);
-                }
-            }
+            const fragment = document.createDocumentFragment();
+            
+            maze.forEach((row, y) => {
+                row.forEach((cell, x) => {
+                    const div = document.createElement('div');
+                    div.className = 'cell' + (cell ? ' wall' : '');
+                    if(x === 1 && y === 1) div.classList.add('player');
+                    if(x === maze.length-2 && y === maze.length-2) div.classList.add('end');
+                    fragment.appendChild(div);
+                });
+            });
+            
+            mazeElement.appendChild(fragment);
         }
 
-        function placePlayer() {
+        function resetGame() {
             playerPosition = { x: 1, y: 1 };
-            updatePlayerPosition();
+            score = 0;
+            maxSteps = mazeSize * 7;
+            updateDisplay();
         }
 
-        function updatePlayerPosition() {
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('steps').textContent = maxSteps;
             document.querySelectorAll('.player').forEach(c => c.classList.remove('player'));
-            const index = playerPosition.y * mazeSize + playerPosition.x;
-            document.querySelector(`#maze .cell:nth-child(${index + 1})`).classList.add('player');
+            document.querySelector(`#maze .cell:nth-child(${playerPosition.y * mazeSize + playerPosition.x + 1})`).classList.add('player');
         }
 
         function movePlayer(dx, dy) {
-            if(isMoving) return;
+            if(isMoving || maxSteps <= 0) return;
             isMoving = true;
             
             const newX = playerPosition.x + dx;
             const newY = playerPosition.y + dy;
             
-            if(newX >= 0 && newX < mazeSize && 
-               newY >= 0 && newY < mazeSize &&
-               !mazeLayout[newY][newX]) {
-                playerPosition.x = newX;
-                playerPosition.y = newY;
-                updatePlayerPosition();
+            if(mazeLayout[newY]?.[newX] === 0) {
+                playerPosition = { x: newX, y: newY };
+                score++;
+                maxSteps--;
+                updateDisplay();
                 
                 if(newX === mazeSize-2 && newY === mazeSize-2) {
-                    setTimeout(() => {
-                        alert("Chiến thắng!");
-                        generateMaze();
-                    }, 100);
+                    showResult(`Chiến thắng! Điểm: ${score}`, true);
+                } else if(maxSteps <= 0) {
+                    showResult("Hết bước! Thua cuộc", false);
                 }
             }
             
-            setTimeout(() => isMoving = false, 150);
+            setTimeout(() => isMoving = false, 100);
         }
 
-        // Touch và mouse controls
-        const arrows = {
-            up: [0, -1],
-            left: [-1, 0],
-            right: [1, 0],
-            down: [0, 1]
+        function showResult(text, isWin) {
+            const modal = document.getElementById('resultModal');
+            modal.style.display = 'block';
+            modal.style.backgroundColor = isWin ? '#002200' : '#220000';
+            document.getElementById('resultTitle').textContent = isWin ? "🎉 Chiến thắng!" : "😞 Thất bại";
+            document.getElementById('resultText').textContent = text;
+        }
+
+        // Điều khiển
+        const controls = {
+            up: [0, -1], left: [-1, 0],
+            right: [1, 0], down: [0, 1]
         };
 
-        Object.keys(arrows).forEach(id => {
-            const btn = document.getElementById(id);
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                movePlayer(...arrows[id]);
-            });
-            btn.addEventListener('mousedown', () => movePlayer(...arrows[id]));
+        Object.entries(controls).forEach(([id, dir]) => {
+            document.getElementById(id).addEventListener('click', () => movePlayer(...dir));
         });
 
-        // Keyboard controls
         document.addEventListener('keydown', (e) => {
-            switch(e.key) {
-                case 'ArrowUp': movePlayer(0, -1); break;
-                case 'ArrowLeft': movePlayer(-1, 0); break;
-                case 'ArrowRight': movePlayer(1, 0); break;
-                case 'ArrowDown': movePlayer(0, 1); break;
-            }
+            const keyMap = {
+                'ArrowUp': controls.up,
+                'ArrowLeft': controls.left,
+                'ArrowRight': controls.right,
+                'ArrowDown': controls.down
+            };
+            if(keyMap[e.key]) movePlayer(...keyMap[e.key]);
         });
 
         // Khởi tạo game
