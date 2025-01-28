@@ -9,7 +9,7 @@
             --cell-size: 28px;
             --wall-color: #8B4513;
             --path-color: #F8F9FA;
-            --accent-color: #2E8B57;
+            --accent-color: #6CB4EE;
         }
 
         body {
@@ -30,6 +30,7 @@
             align-items: center;
             gap: 20px;
             padding: 20px;
+            width: 90%;
         }
 
         .maze-container {
@@ -68,16 +69,16 @@
         }
 
         .end {
-            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%232E8B57' d='M16 2L28 18H4z'/%3E%3Ccircle cx='16' cy='18' r='4' fill='%23FFF'/%3E%3C/svg%3E") center/cover;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%236CB4EE' d='M16 2L28 18H4z'/%3E%3Ccircle cx='16' cy='18' r='4' fill='%23FFF'/%3E%3C/svg%3E") center/cover;
         }
 
         .controls {
             display: grid;
             grid-template-areas: 
-                ". up ."
+                "up up up"
                 "left . right"
-                ". down .";
-            gap: 12px;
+                "down down down";
+            gap: 10px;
             margin: 20px 0;
             padding: 15px;
             background: #FFFFFF;
@@ -101,15 +102,23 @@
             justify-content: center;
         }
 
+        #up { grid-area: up; justify-self: center; }
+        #left { grid-area: left; }
+        #right { grid-area: right; }
+        #down { grid-area: down; justify-self: center; }
+
         .score-board {
             display: flex;
-            gap: 30px;
-            font-size: 1.3em;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 1.2em;
             margin-bottom: 15px;
             background: #FFFFFF;
-            padding: 12px 24px;
+            padding: 15px 25px;
             border-radius: 30px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 400px;
         }
 
         .modal {
@@ -142,30 +151,64 @@
             margin: 5px;
         }
 
-        input, select {
+        input[type="text"] {
             padding: 8px;
             margin: 10px;
             border: 2px solid var(--accent-color);
             border-radius: 20px;
             width: 200px;
+            required: true;
+        }
+
+        .slider-container {
+            margin: 15px 0;
+            width: 250px;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 15px;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
     <div class="modal" id="startModal">
         <h2>Chào mừng!</h2>
-        <input type="text" id="playerName" placeholder="Tên người chơi">
-        <select id="difficulty">
-            <option value="10">Dễ (10x10)</option>
-            <option value="15">Thường (15x15)</option>
-            <option value="100">Khó (100x100)</option>
-        </select>
+        <input type="text" id="playerName" placeholder="Tên người chơi*" required>
+        <div class="slider-container">
+            <input type="range" min="11" max="27" step="8" value="11" class="slider" id="difficulty">
+            <div>Độ khó: <span id="difficultyValue">11x11 (Dễ)</span></div>
+        </div>
         <button onclick="startGame()">Bắt đầu</button>
     </div>
 
     <div class="game-container" style="display:none">
+        <button class="back-btn" onclick="backToMenu()">↩ Quay lại</button>
         <div class="score-board">
-            <div>Số bước: <span id="steps">0</span></div>
+            <div>Người chơi: <strong id="currentPlayer"></strong></div>
+            <div>Bước đã đi: <span id="steps">0</span></div>
+            <div>Bước còn lại: <span id="remainingSteps">100</span></div>
         </div>
         
         <div class="maze-container">
@@ -184,11 +227,12 @@
         <h2 id="resultTitle"></h2>
         <p id="playerResult"></p>
         <p id="resultText"></p>
+        <p>Bước sử dụng: <span id="finalSteps"></span></p>
         <button onclick="generateMaze()">Chơi lại</button>
     </div>
 
     <script>
-        let mazeSize = 15;
+        let mazeSize = 11;
         let mazeLayout = [];
         let playerPosition = { x: 1, y: 1 };
         let stepCount = 0;
@@ -196,12 +240,31 @@
         let isMoving = false;
         let playerName = "";
 
+        // Xử lý slider
+        const slider = document.getElementById("difficulty");
+        const difficultyValue = document.getElementById("difficultyValue");
+        slider.oninput = function() {
+            mazeSize = this.value;
+            difficultyValue.textContent = `${this.value}x${this.value} (${
+                this.value == 11 ? "Dễ" : this.value == 19 ? "Thường" : "Khó"
+            })`;
+        }
+
         function startGame() {
-            playerName = document.getElementById('playerName').value || "Người chơi";
-            mazeSize = parseInt(document.getElementById('difficulty').value);
+            if(!document.getElementById('playerName').value) {
+                alert("Vui lòng nhập tên người chơi!");
+                return;
+            }
+            playerName = document.getElementById('playerName').value;
             document.getElementById('startModal').style.display = 'none';
             document.querySelector('.game-container').style.display = 'flex';
+            document.getElementById('currentPlayer').textContent = playerName;
             generateMaze();
+        }
+
+        function backToMenu() {
+            document.querySelector('.game-container').style.display = 'none';
+            document.getElementById('startModal').style.display = 'block';
         }
 
         function generateMaze() {
@@ -257,12 +320,14 @@
         function resetGame() {
             playerPosition = { x: 1, y: 1 };
             stepCount = 0;
-            maxSteps = mazeSize * (mazeSize <= 15 ? 7 : 3);
+            maxSteps = mazeSize * (mazeSize <= 11 ? 10 : mazeSize <= 19 ? 7 : 5);
+            document.getElementById('remainingSteps').textContent = maxSteps;
             updateDisplay();
         }
 
         function updateDisplay() {
             document.getElementById('steps').textContent = stepCount;
+            document.getElementById('remainingSteps').textContent = maxSteps - stepCount;
             document.querySelectorAll('.player').forEach(c => c.classList.remove('player'));
             document.querySelector(`#maze .cell:nth-child(${playerPosition.y * mazeSize + playerPosition.x + 1})`).classList.add('player');
         }
@@ -296,6 +361,7 @@
             document.getElementById('resultTitle').textContent = isWin ? "🏆 Chiến thắng!" : "💔 Thua rồi";
             document.getElementById('playerResult').innerHTML = `${playerName} ${isWin ? '🎉' : '😢'}`;
             document.getElementById('resultText').textContent = text;
+            document.getElementById('finalSteps').textContent = stepCount;
         }
 
         // Điều khiển
