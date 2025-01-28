@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Mê Cung Touch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            touch-action: none;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .maze {
+            display: grid;
+            gap: 2px;
+            margin: 20px 0;
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ccc;
+            border: 1px solid #999;
+            user-select: none;
+        }
+        .cell.wall {
+            background-color: #333;
+        }
+        .cell.start {
+            background-color: #0f0;
+        }
+        .cell.end {
+            background-color: #f00;
+        }
+        .cell.player {
+            background-color: #00f;
+        }
+        .arrow-keys {
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 5px;
+        }
+        .arrow-btn {
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .arrow-btn:active {
+            background: #ddd;
+        }
+        #up { grid-area: up; }
+        #left { grid-area: left; }
+        #right { grid-area: right; }
+        #down { grid-area: down; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <label for="size">Kích thước:</label>
+        <input type="number" id="size" min="5" max="30" value="10">
+        <button onclick="generateMaze()">Tạo mới</button>
+    </div>
+    <div class="maze" id="maze"></div>
+    <div class="arrow-keys">
+        <div class="arrow-btn" id="up">↑</div>
+        <div class="arrow-btn" id="left">←</div>
+        <div class="arrow-btn" id="right">→</div>
+        <div class="arrow-btn" id="down">↓</div>
+    </div>
+
+    <script>
+        let mazeSize = 10;
+        let mazeLayout = [];
+        let playerPosition = { x: 1, y: 1 };
+        let isMoving = false;
+
+        function generateMaze() {
+            mazeSize = parseInt(document.getElementById('size').value);
+            if (mazeSize < 5 || mazeSize > 30) {
+                alert("Kích thước từ 5 đến 30!");
+                return;
+            }
+            
+            mazeLayout = createRandomMaze(mazeSize);
+            renderMaze(mazeLayout);
+            placePlayer();
+        }
+
+        function createRandomMaze(size) {
+            const maze = Array.from({ length: size }, () => Array(size).fill(1));
+            
+            function dfs(x, y) {
+                const dirs = [[1,0],[-1,0],[0,1],[0,-1]].sort(() => Math.random()-0.5);
+                maze[y][x] = 0;
+                
+                for(const [dx, dy] of dirs) {
+                    const nx = x + dx*2;
+                    const ny = y + dy*2;
+                    if(nx >= 0 && nx < size && ny >= 0 && ny < size && maze[ny][nx]) {
+                        maze[y+dy][x+dx] = 0;
+                        dfs(nx, ny);
+                    }
+                }
+            }
+            
+            dfs(1, 1);
+            maze[1][1] = 0;
+            maze[size-2][size-2] = 0;
+            return maze;
+        }
+
+        function renderMaze(maze) {
+            const mazeElement = document.getElementById('maze');
+            mazeElement.innerHTML = '';
+            mazeElement.style.gridTemplateColumns = `repeat(${mazeSize}, 30px)`;
+            
+            for(let y = 0; y < mazeSize; y++) {
+                for(let x = 0; x < mazeSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell' + 
+                        (maze[y][x] ? ' wall' : '') +
+                        (x === 1 && y === 1 ? ' start' : '') +
+                        (x === mazeSize-2 && y === mazeSize-2 ? ' end' : '');
+                    mazeElement.appendChild(cell);
+                }
+            }
+        }
+
+        function placePlayer() {
+            playerPosition = { x: 1, y: 1 };
+            updatePlayerPosition();
+        }
+
+        function updatePlayerPosition() {
+            document.querySelectorAll('.player').forEach(c => c.classList.remove('player'));
+            const index = playerPosition.y * mazeSize + playerPosition.x;
+            document.querySelector(`#maze .cell:nth-child(${index + 1})`).classList.add('player');
+        }
+
+        function movePlayer(dx, dy) {
+            if(isMoving) return;
+            isMoving = true;
+            
+            const newX = playerPosition.x + dx;
+            const newY = playerPosition.y + dy;
+            
+            if(newX >= 0 && newX < mazeSize && 
+               newY >= 0 && newY < mazeSize &&
+               !mazeLayout[newY][newX]) {
+                playerPosition.x = newX;
+                playerPosition.y = newY;
+                updatePlayerPosition();
+                
+                if(newX === mazeSize-2 && newY === mazeSize-2) {
+                    setTimeout(() => {
+                        alert("Chiến thắng!");
+                        generateMaze();
+                    }, 100);
+                }
+            }
+            
+            setTimeout(() => isMoving = false, 150);
+        }
+
+        // Xử lý sự kiện cảm ứng và chuột
+        const arrows = {
+            up: [0, -1],
+            left: [-1, 0],
+            right: [1, 0],
+            down: [0, 1]
+        };
+
+        Object.keys(arrows).forEach(id => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                movePlayer(...arrows[id]);
+            });
+            btn.addEventListener('mousedown', () => movePlayer(...arrows[id]));
+        });
+
+        // Xử lý phím
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': movePlayer(0, -1); break;
+                case 'ArrowLeft': movePlayer(-1, 0); break;
+                case 'ArrowRight': movePlayer(1, 0); break;
+                case 'ArrowDown': movePlayer(0, 1); break;
+            }
+        });
+
+        // Khởi tạo game
+        generateMaze();
+    </script>
+</body>
+</html>
