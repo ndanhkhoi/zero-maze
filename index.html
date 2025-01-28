@@ -9,7 +9,7 @@
             --cell-size: 28px;
             --wall-color: #8B4513;
             --path-color: #F8F9FA;
-            --accent-color: #D2691E;
+            --accent-color: #2E8B57;
         }
 
         body {
@@ -33,10 +33,11 @@
         }
 
         .maze-container {
-            width: 100vmin;
-            height: 100vmin;
+            width: 90vmin;
+            height: 90vmin;
             max-width: 512px;
             max-height: 512px;
+            margin: 0 auto;
             position: relative;
             border: 4px solid var(--accent-color);
             border-radius: 8px;
@@ -58,17 +59,16 @@
         }
 
         .wall {
-            background: var(--wall-color);
-            box-shadow: 0 0 4px rgba(139,69,19,0.3);
+            background: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%238B4513' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='16' height='16' fill='%239C6B3A'/%3E%3Cpath d='M0 0 L16 0 L16 1 L0 1 Z M0 7 L16 7 L16 8 L0 8 Z M0 15 L16 15 L16 16 L0 16 Z' fill='%237A5230'/%3E%3C/svg%3E");
         }
 
         .player {
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232E8B57'/%3E%3Cpath d='M16 4a12 12 0 0 1 0 24 12 12 0 0 1 0-24z' fill='%23FFFFFF'/%3E%3C/svg%3E") center/cover;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='16' cy='11' r='4' fill='%232E8B57'/%3E%3Cpath d='M16 15a9 9 0 0 0-9 9v3h18v-3a9 9 0 0 0-9-9z' fill='%232E8B57'/%3E%3C/svg%3E") center/cover;
             transition: transform 0.15s ease-in-out;
         }
 
         .end {
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23FF4500' d='M16 4l12 24H4z'/%3E%3Ccircle cx='16' cy='22' r='4' fill='%23FFFFFF'/%3E%3C/svg%3E") center/cover;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%232E8B57' d='M16 2L28 18H4z'/%3E%3Ccircle cx='16' cy='18' r='4' fill='%23FFF'/%3E%3C/svg%3E") center/cover;
         }
 
         .controls {
@@ -86,13 +86,13 @@
         }
 
         .arrow-btn {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             background: #FFFFFF;
             border: 2px solid var(--accent-color);
             border-radius: 50%;
             color: var(--accent-color);
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             touch-action: manipulation;
             transition: all 0.1s;
@@ -100,16 +100,6 @@
             align-items: center;
             justify-content: center;
         }
-
-        .arrow-btn:active {
-            background: #F0F0F0;
-            transform: scale(0.92);
-        }
-
-        #up { grid-area: up; }
-        #left { grid-area: left; }
-        #right { grid-area: right; }
-        #down { grid-area: down; }
 
         .score-board {
             display: flex;
@@ -137,6 +127,10 @@
             box-shadow: 0 12px 24px rgba(0,0,0,0.15);
         }
 
+        #startModal {
+            display: block;
+        }
+
         button {
             background: var(--accent-color);
             color: white;
@@ -145,18 +139,33 @@
             border-radius: 25px;
             cursor: pointer;
             transition: all 0.2s;
+            margin: 5px;
         }
 
-        button:active {
-            transform: scale(0.95);
+        input, select {
+            padding: 8px;
+            margin: 10px;
+            border: 2px solid var(--accent-color);
+            border-radius: 20px;
+            width: 200px;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <div class="modal" id="startModal">
+        <h2>Chào mừng!</h2>
+        <input type="text" id="playerName" placeholder="Tên người chơi">
+        <select id="difficulty">
+            <option value="10">Dễ (10x10)</option>
+            <option value="15">Thường (15x15)</option>
+            <option value="100">Khó (100x100)</option>
+        </select>
+        <button onclick="startGame()">Bắt đầu</button>
+    </div>
+
+    <div class="game-container" style="display:none">
         <div class="score-board">
-            <div>Điểm: <span id="score">0</span></div>
-            <div>Bước còn lại: <span id="steps">100</span></div>
+            <div>Số bước: <span id="steps">0</span></div>
         </div>
         
         <div class="maze-container">
@@ -173,26 +182,30 @@
 
     <div class="modal" id="resultModal">
         <h2 id="resultTitle"></h2>
+        <p id="playerResult"></p>
         <p id="resultText"></p>
         <button onclick="generateMaze()">Chơi lại</button>
     </div>
-
-    <audio id="moveSound">
-        <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQIAAP4BAAD//wAA//+AgP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8=" type="audio/wav">
-    </audio>
 
     <script>
         let mazeSize = 15;
         let mazeLayout = [];
         let playerPosition = { x: 1, y: 1 };
-        let score = 0;
+        let stepCount = 0;
         let maxSteps = 100;
         let isMoving = false;
-        const moveSound = document.getElementById('moveSound');
+        let playerName = "";
+
+        function startGame() {
+            playerName = document.getElementById('playerName').value || "Người chơi";
+            mazeSize = parseInt(document.getElementById('difficulty').value);
+            document.getElementById('startModal').style.display = 'none';
+            document.querySelector('.game-container').style.display = 'flex';
+            generateMaze();
+        }
 
         function generateMaze() {
             document.getElementById('resultModal').style.display = 'none';
-            mazeSize = Math.min(Math.max(15, 5), 25);
             mazeLayout = createRandomMaze(mazeSize);
             renderMaze(mazeLayout);
             resetGame();
@@ -243,20 +256,19 @@
 
         function resetGame() {
             playerPosition = { x: 1, y: 1 };
-            score = 0;
-            maxSteps = mazeSize * 7;
+            stepCount = 0;
+            maxSteps = mazeSize * (mazeSize <= 15 ? 7 : 3);
             updateDisplay();
         }
 
         function updateDisplay() {
-            document.getElementById('score').textContent = score;
-            document.getElementById('steps').textContent = maxSteps;
+            document.getElementById('steps').textContent = stepCount;
             document.querySelectorAll('.player').forEach(c => c.classList.remove('player'));
             document.querySelector(`#maze .cell:nth-child(${playerPosition.y * mazeSize + playerPosition.x + 1})`).classList.add('player');
         }
 
         function movePlayer(dx, dy) {
-            if(isMoving || maxSteps <= 0) return;
+            if(isMoving || stepCount >= maxSteps) return;
             isMoving = true;
             
             const newX = playerPosition.x + dx;
@@ -264,16 +276,13 @@
             
             if(mazeLayout[newY]?.[newX] === 0) {
                 playerPosition = { x: newX, y: newY };
-                score++;
-                maxSteps--;
-                moveSound.currentTime = 0;
-                moveSound.play();
+                stepCount++;
                 updateDisplay();
                 
                 if(newX === mazeSize-2 && newY === mazeSize-2) {
-                    showResult(`Điểm số: ${score}`, true);
-                } else if(maxSteps <= 0) {
-                    showResult("Hết bước! Thử lại nhé!", false);
+                    showResult(`🏁 Hoàn thành trong ${stepCount} bước`, true);
+                } else if(stepCount >= maxSteps) {
+                    showResult("⏳ Hết bước! Thử lại nhé!", false);
                 }
             }
             
@@ -285,6 +294,7 @@
             modal.style.display = 'block';
             modal.style.backgroundColor = isWin ? '#F0FFF0' : '#FFF0F0';
             document.getElementById('resultTitle').textContent = isWin ? "🏆 Chiến thắng!" : "💔 Thua rồi";
+            document.getElementById('playerResult').innerHTML = `${playerName} ${isWin ? '🎉' : '😢'}`;
             document.getElementById('resultText').textContent = text;
         }
 
@@ -307,9 +317,6 @@
             };
             if(keyMap[e.key]) movePlayer(...keyMap[e.key]);
         });
-
-        // Khởi tạo game
-        generateMaze();
     </script>
 </body>
 </html>
