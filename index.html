@@ -108,6 +108,9 @@
             background: #3498DB;
             color: white;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button:active {
@@ -268,7 +271,7 @@
         function resetGame() {
             playerPosition = { x: 1, y: 1 };
             steps = 0;
-            maxSteps = mazeSize * 5;
+            maxSteps = mazeSize * 8;
             gameActive = true;
             updateStatus();
             placePlayer();
