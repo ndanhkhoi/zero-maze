@@ -210,7 +210,7 @@
         let isSolving = false;
 
         function startNewGame() {
-            if (isSolving || !gameActive) return;
+            if (isSolving) return;
             mazeSize = parseInt(document.getElementById('difficulty').value);
             generateMaze();
         }
