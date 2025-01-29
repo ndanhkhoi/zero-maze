@@ -154,6 +154,61 @@
             background-color: rgba(46, 204, 113, 0.3) !important;
         }
 
+        .custom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2C3E50;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 300px;
+            animation: modalShow 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes modalShow {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-message {
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            min-width: 80px;
+        }
+
+        #closeModal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #fff;
+        }
+
+
         @media (max-width: 480px) {
             .status-bar {
                 margin: 10px 0;
@@ -170,6 +225,11 @@
                 width: 50px;
                 height: 50px;
                 font-size: 20px;
+            }
+
+            .modal-content {
+                max-width: 90%;
+                padding: 20px;
             }
         }
     </style>
@@ -200,6 +260,14 @@
         <button class="arrow-btn" id="down">↓</button>
     </div>
 
+    <div class="custom-modal" id="customModal">
+        <div class="modal-content">
+            <div id="closeModal">×</div>
+            <div class="modal-message" id="modalMessage"></div>
+            <div class="modal-buttons" id="modalButtons"></div>
+        </div>
+    </div>
+
     <script>
         let mazeSize = 15;
         let mazeLayout = [];
@@ -208,6 +276,30 @@
         let maxSteps = 0;
         let gameActive = true;
         let isSolving = false;
+
+        // Modal handling
+        const modal = document.getElementById('customModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalButtons = document.getElementById('modalButtons');
+        
+        document.getElementById('closeModal').addEventListener('click', () => hideModal());
+
+        function showModal(message, buttons) {
+            modalMessage.innerHTML = message;
+            modalButtons.innerHTML = '';
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.className = 'modal-btn';
+                button.textContent = btn.text;
+                button.onclick = btn.action;
+                modalButtons.appendChild(button);
+            });
+            modal.style.display = 'flex';
+        }
+
+        function hideModal() {
+            modal.style.display = 'none';
+        }
 
         function startNewGame() {
             if (isSolving) return;
@@ -328,9 +420,19 @@
         }
 
         function showResult(message) {
-            if(confirm(message + '\n\nChơi lại?')) {
-                startNewGame();
-            }
+            showModal(message, [
+                {
+                    text: 'Chơi lại',
+                    action: () => {
+                        hideModal();
+                        startNewGame();
+                    }
+                },
+                {
+                    text: 'Đóng',
+                    action: () => hideModal()
+                }
+            ]);
         }
 
         function solveMaze() {
