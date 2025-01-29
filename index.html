@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maze Challenge</title>
     <style>
-        /* Giữ nguyên phần CSS như trước */
         :root {
             --cell-size: min(5vmin, 40px);
             --max-size: 512px;
@@ -124,6 +123,10 @@
             background: #2980B9;
         }
 
+        .solve-btn {
+            background: #27AE60 !important;
+        }
+
         #up { grid-area: up; }
         #left { grid-area: left; }
         #right { grid-area: right; }
@@ -146,6 +149,10 @@
             background: #34495E;
             color: white;
             border: 1px solid #2C3E50;
+        }
+
+        .solution-path {
+            background-color: rgba(46, 204, 113, 0.3) !important;
         }
 
         @media (max-width: 480px) {
@@ -175,6 +182,7 @@
             <option value="35">Khó</option>
         </select>
         <button onclick="startNewGame()">Chơi mới</button>
+        <button class="solve-btn" onclick="solveMaze()">Giải mê cung</button>
     </div>
 
     <div class="status-bar">
@@ -199,6 +207,7 @@
         let steps = 0;
         let maxSteps = 0;
         let gameActive = true;
+        let isSolving = false;
 
         function startNewGame() {
             mazeSize = parseInt(document.getElementById('difficulty').value);
@@ -214,7 +223,6 @@
         function createRandomMaze(size) {
             const maze = Array.from({ length: size }, () => Array(size).fill(1));
             
-            // Tạo tường bao quanh
             for(let i = 0; i < size; i++) {
                 maze[0][i] = 1;
                 maze[size-1][i] = 1;
@@ -236,16 +244,12 @@
                 }
             }
             
-            // Tạo lối vào/ra và đảm bảo đường đi
             maze[1][1] = 0;
             maze[size-2][size-2] = 0;
             dfs(1, 1);
 
-            // Đảm bảo đường thoát được kết nối
-            const exitX = size-2;
-            const exitY = size-2;
-            if(maze[exitY-1][exitX] === 1 && maze[exitY][exitX-1] === 1) {
-                maze[exitY][exitX-1] = 0; // Mở đường bên trái exit
+            if(maze[size-2][size-3] === 1 && maze[size-3][size-2] === 1) {
+                maze[size-2][size-3] = 0;
             }
 
             return maze;
@@ -267,14 +271,15 @@
             }
         }
 
-        // Giữ nguyên các hàm còn lại
         function resetGame() {
             playerPosition = { x: 1, y: 1 };
             steps = 0;
             maxSteps = mazeSize * 8;
             gameActive = true;
+            isSolving = false;
             updateStatus();
             placePlayer();
+            clearSolutionPath();
         }
 
         function updateStatus() {
@@ -289,7 +294,7 @@
         }
 
         function movePlayer(dx, dy) {
-            if(!gameActive) return;
+            if(!gameActive || isSolving) return;
             
             const newX = playerPosition.x + dx;
             const newY = playerPosition.y + dy;
@@ -327,7 +332,70 @@
             }
         }
 
-        // Event listeners
+        function solveMaze() {
+            if (isSolving || !gameActive) return;
+            isSolving = true;
+            const path = findShortestPath();
+            if (path) {
+                highlightPath(path);
+            } else {
+                alert('Không tìm thấy đường đi!');
+                isSolving = false;
+            }
+        }
+
+        function findShortestPath() {
+            const start = { x: playerPosition.x, y: playerPosition.y };
+            const end = { x: mazeSize - 2, y: mazeSize - 2 };
+            const queue = [{ ...start, path: [] }];
+            const visited = new Set();
+            visited.add(`${start.x},${start.y}`);
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+                if (current.x === end.x && current.y === end.y) {
+                    return current.path.concat([{ x: current.x, y: current.y }]);
+                }
+                const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+                for (const [dx, dy] of directions) {
+                    const nx = current.x + dx;
+                    const ny = current.y + dy;
+                    if (isValidMove(nx, ny) && !visited.has(`${nx},${ny}`)) {
+                        visited.add(`${nx},${ny}`);
+                        queue.push({
+                            x: nx,
+                            y: ny,
+                            path: current.path.concat([{ x: current.x, y: current.y }])
+                        });
+                    }
+                }
+            }
+            return null;
+        }
+
+        function highlightPath(path) {
+            clearSolutionPath();
+            const lastIndex = path.length - 1;
+            path.forEach((step, index) => {
+                setTimeout(() => {
+                    const cellIndex = step.y * mazeSize + step.x;
+                    const cell = document.querySelector(`#maze .cell:nth-child(${cellIndex + 1})`);
+                    if (cell && !cell.classList.contains('player') && !cell.classList.contains('end')) {
+                        cell.classList.add('solution-path');
+                    }
+                    if (index === lastIndex) {
+                        isSolving = false;
+                    }
+                }, index * 50);
+            });
+        }
+
+        function clearSolutionPath() {
+            document.querySelectorAll('.solution-path').forEach(cell => {
+                cell.classList.remove('solution-path');
+            });
+        }
+
         const arrows = {
             up: [0, -1],
             left: [-1, 0],
@@ -345,7 +413,7 @@
         });
 
         document.addEventListener('keydown', (e) => {
-            if(!gameActive) return;
+            if(!gameActive || isSolving) return;
             switch(e.key) {
                 case 'ArrowUp': movePlayer(0, -1); break;
                 case 'ArrowLeft': movePlayer(-1, 0); break;
@@ -354,7 +422,6 @@
             }
         });
 
-        // Khởi động game
         startNewGame();
     </script>
 </body>
