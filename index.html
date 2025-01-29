@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maze Challenge</title>
     <style>
+        /* Giữ nguyên phần CSS như trước */
         :root {
             --cell-size: min(5vmin, 40px);
             --max-size: 512px;
@@ -232,10 +233,18 @@
                 }
             }
             
-            // Tạo lối vào/ra
+            // Tạo lối vào/ra và đảm bảo đường đi
             maze[1][1] = 0;
             maze[size-2][size-2] = 0;
             dfs(1, 1);
+
+            // Đảm bảo đường thoát được kết nối
+            const exitX = size-2;
+            const exitY = size-2;
+            if(maze[exitY-1][exitX] === 1 && maze[exitY][exitX-1] === 1) {
+                maze[exitY][exitX-1] = 0; // Mở đường bên trái exit
+            }
+
             return maze;
         }
 
@@ -255,6 +264,7 @@
             }
         }
 
+        // Giữ nguyên các hàm còn lại
         function resetGame() {
             playerPosition = { x: 1, y: 1 };
             steps = 0;
